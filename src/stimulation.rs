@@ -1,6 +1,11 @@
-use bracket_lib::color::{BLACK, YELLOW};
-use bracket_lib::prelude::{main_loop, BError, BTermBuilder, BTerm,RED,
-                           VirtualKeyCode, GameState, to_cp437,NAVY,RandomNumberGenerator};
+use bracket_lib::color::{BLACK, YELLOW,RED,WHITE,NAVY};
+use bracket_lib::prelude::{main_loop, BError, BTermBuilder, BTerm,VirtualKeyCode,
+                         GameState, to_cp437,RandomNumberGenerator,TextAlign,RGBA};
+
+use std::collections::HashMap;
+use std::vec;
+
+use crate::lands::{self, Grassland};
 
 const GAME_WIDTH:i32 = 80;
 const GAME_HEIGHT:i32 = 50;
@@ -14,9 +19,13 @@ enum GameMode{
 }
 
 pub struct State{
+    //游戏整体相关数据
     mode:GameMode,
     frame_time:f32,
     time:i32,
+    
+    world_lands:Vec<lands::Grassland>,
+    world_market:HashMap<String, u32>,//数据结构存储所谓世界市场的货物数量
 }
 impl State {
     //构造函数开始的时候新建一个state
@@ -25,22 +34,14 @@ impl State {
             mode:GameMode::Menu,
             frame_time:0.0,
             time:0,
+            world_lands:Vec::new(),
+            world_market:HashMap::new(),
         }
     }
-    //游戏主进程
-    pub fn play(&mut self,ctx:&mut BTerm){
-        ctx.cls_bg(NAVY);
-
-        self.frame_time += ctx.frame_time_ms;//计时
-        if self.frame_time > PERIOD {
-            self.frame_time = 0.0;
-            self.time += 1;
-            println!("+1");
-        }
-
-        if self.time > 10 {
-            self.mode = GameMode::End;
-        }
+    pub fn back_to_menu(&mut self){
+        self.mode = GameMode::Menu;
+        self.frame_time = 0.0;
+        self.time = 0;
     }
     //重启
     pub fn restart(&mut self){
@@ -48,6 +49,63 @@ impl State {
         self.frame_time = 0.0;
         self.time = 0;
     }
+//=================================================================================================
+    //游戏主进程
+    pub fn play(&mut self,ctx:&mut BTerm){
+    //整体
+        //背景颜色
+        ctx.cls_bg(BLACK);
+        //按键退出和返回菜单
+        if let Some(key) = ctx.key{
+            match key {
+                VirtualKeyCode::M => self.back_to_menu(),
+                VirtualKeyCode::Q => ctx.quitting = true,
+                VirtualKeyCode::L => self.world_lands.push(Grassland::new(10,5)),
+                _ => {}
+            }
+        }
+
+    //左上角：
+        //显示时间
+        self.frame_time += ctx.frame_time_ms;//计时
+        if self.frame_time > PERIOD {
+            self.frame_time = 0.0;
+            self.time += 1;
+        }
+        ctx.print(0, 1, &format!("Time: {}", self.time));
+ 
+        
+    //右上角：
+        //按键提示
+        ctx.print(60,2, "(M) Back to Menu");
+        ctx.print(60,1, "(Q) Quit");
+    //左下角：
+    //右下角：
+    //中间：
+        //左侧货物列表
+        ctx.draw_hollow_box(10, 10, 25,35, WHITE, BLACK);//x,y,宽,高,fg字符颜色，bg背景颜色
+        ctx.print(11, 11, &format!("Worldmarket:"));
+        ctx.print(15, 12, &format!("name"));
+        ctx.print(25, 12, &format!("number"));
+        //打印货物数量至终端
+        for (key, value) in &self.world_market {
+            let mut y:u32 = 13;
+            ctx.print(15, y,&format!("{key}: {value}"));
+            y += y+1;
+        }
+        //右侧土地列表
+        ctx.draw_hollow_box(40, 10, 25,35, WHITE, BLACK);//x,y,宽,高,fg字符颜色，bg背景颜色
+        ctx.print(41, 11, &format!("Worldlands:"));
+        ctx.print(41, 12, &format!("name"));
+        ctx.print(51, 12, &format!("size"));
+        //打印土地至终端
+        for land in &self.world_lands {
+            let mut y:u32 = 13;
+            ctx.print(51, y,&format!("*land.show_size()"));
+            y += y+1;
+        }
+    }
+//=================================================================================================
     //主菜单
     pub fn main_menu(&mut self,ctx:&mut BTerm){
         ctx.cls();
@@ -79,7 +137,7 @@ impl State {
     }
 }
 impl GameState for State{
-    //tick汉书实时监听所有状态变化
+    //tick每一帧(rendered frame)都调用，实时监听所有状态变化
     fn tick(&mut self, ctx: &mut BTerm) {
         match self.mode{
             GameMode::Menu => self.main_menu(ctx),
