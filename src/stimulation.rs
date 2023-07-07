@@ -6,7 +6,7 @@ use std::collections::HashMap;
 
 use std::thread;
 use std::time::Duration;
-use std::sync::mpsc;
+use std::sync::mpsc::{self, Sender, Receiver};
 
 use std::{vec, string};      
 
@@ -19,7 +19,7 @@ const PERIOD:f32 = 1000.0;
 enum GameMode{
     Menu,
     Playing,
-    Paused,
+    //Paused,
     End,
 }
 
@@ -59,26 +59,27 @@ impl State {
         //初始化货物
         self.world_market.insert(String::from("wheat"), 0);
         self.world_market.insert(String::from("apple"), 0);
-
     }
 //=================================================================================================
     //游戏主进程
     pub fn play(&mut self,ctx:&mut BTerm){
     //接收货物信息
-    
+    let received_wheat:u32 = self.new_land(ctx);
     //更新货物信息
     for land in &self.world_lands{
-        //self.world_market land::produce()
-        self.world_market.insert(String::from("wheat"), 5);
+        let good_name:String = String::from("wheat");
+        let mut wheat:u32 = self.world_market.get(&good_name).copied().unwrap_or(0);
+        wheat += received_wheat;
+        self.world_market.insert(String::from("wheat"), wheat);
     }
         //self.world_lands
     //画面打印信息的定义
-        let mut LAND_SIZE_Y:u32 = 13;
-        let mut LAND_SIZE_X:u32 = 51;
-        let mut LAND_NAME_Y:u32 = 13;
-        let mut LAND_NAME_X:u32 = 51;
-        let mut GOOD_Y:u32 = 13;
-        let mut GOOD_X:u32 = 15;
+        let mut land_size_y:u32 = 13;
+        let mut land_size_x:u32 = 51;
+        let mut land_name_y:u32 = 13;
+        let mut land_name_x:u32 = 51;
+        let mut good_y:u32 = 13;
+        let mut good_x:u32 = 15;
     //整体
         //背景颜色
         ctx.cls_bg(BLACK);
@@ -118,8 +119,8 @@ impl State {
         ctx.print(25, 12, &format!("number"));
         //打印货物数量至终端
         for (key, value) in &self.world_market {
-            ctx.print(GOOD_X, GOOD_Y,&format!("{key}: {value}"));
-            GOOD_Y += 1;
+            ctx.print(good_x, good_y,&format!("{key}: {value}"));
+            good_y += 1;
 
         }
         //右侧土地列表
@@ -129,8 +130,8 @@ impl State {
         ctx.print(51, 12, &format!("size"));
         //打印土地至终端
         for land in &self.world_lands {
-            ctx.print(LAND_SIZE_X, LAND_SIZE_Y,&format!("{}",land.show_size()));
-            LAND_SIZE_Y += 1;
+            ctx.print(land_size_x, land_size_y,&format!("{}",land.show_size()));
+            land_size_y += 1;
         }
     }
 //=================================================================================================
@@ -163,6 +164,18 @@ impl State {
             }
         }
     }
+    //新建土地
+    fn new_land(&mut self, ctx: &mut BTerm) -> u32{
+            //开线程
+            let (tx, rx) = mpsc::channel();
+            thread::spawn(move || {
+                let val:u32 = 5;
+                tx.send(val).unwrap();
+            });
+            let received = rx.recv().unwrap();
+            received
+        }
+    
 }
 impl GameState for State{
     //tick每一帧(rendered frame)都调用，实时监听所有状态变化
