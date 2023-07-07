@@ -13,6 +13,7 @@ pub struct Grassland{
 impl Grassland{
     //新建一个Grassland
     pub fn new(size:u32,fertility:u32) -> Self{//参数不带self的是new，常用来作构造函数
+        //新建一片土地后开始产出
         Self{
             size:size,
             fertility:fertility,

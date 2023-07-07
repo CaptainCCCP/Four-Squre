@@ -21,7 +21,6 @@ fn main()->BError {
 
     //let game = game::State::new();//flappy游戏
     let game = stimulation::State::new();
-
     //刷新数据更新状态          //多线程监听用户输入,根据事件、动作来改变状态及状态
     //tick function
 

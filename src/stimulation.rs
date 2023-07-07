@@ -3,7 +3,12 @@ use bracket_lib::prelude::{main_loop, BError, BTermBuilder, BTerm,VirtualKeyCode
                          GameState, to_cp437,RandomNumberGenerator,TextAlign,RGBA};
 
 use std::collections::HashMap;
-use std::vec;
+
+use std::thread;
+use std::time::Duration;
+use std::sync::mpsc;
+
+use std::{vec, string};      
 
 use crate::lands::{self, Grassland};
 
@@ -48,10 +53,32 @@ impl State {
         self.mode = GameMode::Playing;
         self.frame_time = 0.0;
         self.time = 0;
+        //初始化土地
+        self.world_lands.clear();
+        self.world_lands.shrink_to_fit();
+        //初始化货物
+        self.world_market.insert(String::from("wheat"), 0);
+        self.world_market.insert(String::from("apple"), 0);
+
     }
 //=================================================================================================
     //游戏主进程
     pub fn play(&mut self,ctx:&mut BTerm){
+    //接收货物信息
+    
+    //更新货物信息
+    for land in &self.world_lands{
+        //self.world_market land::produce()
+        self.world_market.insert(String::from("wheat"), 5);
+    }
+        //self.world_lands
+    //画面打印信息的定义
+        let mut LAND_SIZE_Y:u32 = 13;
+        let mut LAND_SIZE_X:u32 = 51;
+        let mut LAND_NAME_Y:u32 = 13;
+        let mut LAND_NAME_X:u32 = 51;
+        let mut GOOD_Y:u32 = 13;
+        let mut GOOD_X:u32 = 15;
     //整体
         //背景颜色
         ctx.cls_bg(BLACK);
@@ -60,7 +87,9 @@ impl State {
             match key {
                 VirtualKeyCode::M => self.back_to_menu(),
                 VirtualKeyCode::Q => ctx.quitting = true,
-                VirtualKeyCode::L => self.world_lands.push(Grassland::new(10,5)),
+                VirtualKeyCode::L => {
+                    self.world_lands.push(Grassland::new(10,5));
+                }
                 _ => {}
             }
         }
@@ -89,9 +118,9 @@ impl State {
         ctx.print(25, 12, &format!("number"));
         //打印货物数量至终端
         for (key, value) in &self.world_market {
-            let mut y:u32 = 13;
-            ctx.print(15, y,&format!("{key}: {value}"));
-            y += y+1;
+            ctx.print(GOOD_X, GOOD_Y,&format!("{key}: {value}"));
+            GOOD_Y += 1;
+
         }
         //右侧土地列表
         ctx.draw_hollow_box(40, 10, 25,35, WHITE, BLACK);//x,y,宽,高,fg字符颜色，bg背景颜色
@@ -100,9 +129,8 @@ impl State {
         ctx.print(51, 12, &format!("size"));
         //打印土地至终端
         for land in &self.world_lands {
-            let mut y:u32 = 13;
-            ctx.print(51, y,&format!("*land.show_size()"));
-            y += y+1;
+            ctx.print(LAND_SIZE_X, LAND_SIZE_Y,&format!("{}",land.show_size()));
+            LAND_SIZE_Y += 1;
         }
     }
 //=================================================================================================
