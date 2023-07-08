@@ -10,7 +10,9 @@ use std::sync::mpsc::{self, Sender, Receiver};
 
 use std::{vec, string};      
 
-use crate::lands::{self, Grassland};
+use crate::lands::{self, LandType};
+use crate::buildings::{self,Building, BuildingType};
+use crate::people;
 
 const GAME_WIDTH:i32 = 80;
 const GAME_HEIGHT:i32 = 50;
@@ -28,8 +30,9 @@ pub struct State{
     mode:GameMode,
     frame_time:f32,
     time:i32,
-    
-    world_lands:Vec<lands::Grassland>,
+
+    world_lands:Vec<lands::Land>,
+    world_people:Vec<people::People>,
     world_market:HashMap<String, u32>,//数据结构存储所谓世界市场的货物数量
 }
 impl State {
@@ -39,7 +42,9 @@ impl State {
             mode:GameMode::Menu,
             frame_time:0.0,
             time:0,
+
             world_lands:Vec::new(),
+            world_people:Vec::new(),
             world_market:HashMap::new(),
         }
     }
@@ -63,16 +68,38 @@ impl State {
 //=================================================================================================
     //游戏主进程
     pub fn play(&mut self,ctx:&mut BTerm){
+        //硬件操作中断
+        if let Some(key) = ctx.key{
+            match key {
+                VirtualKeyCode::M => self.back_to_menu(),
+                VirtualKeyCode::Q => ctx.quitting = true,
+                VirtualKeyCode::L => {
+                    self.world_lands.push(lands::Land::new(10,LandType::Grassland,5,Vec::new()));
+                }
+                VirtualKeyCode::P => {
+                    self.world_people.push(people::People::new(5,people::PersonType::Farmer));
+                }
+                _ => {}
+            }
+        }
     //接收货物信息
-    let received_wheat:u32 = self.new_land(ctx);
-    //更新货物信息
-    for land in &self.world_lands{
+    for land in &mut self.world_lands{
+        let received_wheat:u32 = land.produce();
         let good_name:String = String::from("wheat");
+        //更新货物信息
         let mut wheat:u32 = self.world_market.get(&good_name).copied().unwrap_or(0);
         wheat += received_wheat;
         self.world_market.insert(String::from("wheat"), wheat);
     }
-        //self.world_lands
+    //居民消费
+    for people in &mut self.world_people{
+        let consumed_wheat:u32 = people.consume();
+        let good_name:String = String::from("wheat");
+        //更新货物信息
+        let mut wheat:u32 = self.world_market.get(&good_name).copied().unwrap_or(0);
+        wheat -= consumed_wheat;
+        self.world_market.insert(String::from("wheat"), wheat);
+    }
     //画面打印信息的定义
         let mut land_size_y:u32 = 13;
         let mut land_size_x:u32 = 51;
@@ -83,17 +110,6 @@ impl State {
     //整体
         //背景颜色
         ctx.cls_bg(BLACK);
-        //按键退出和返回菜单
-        if let Some(key) = ctx.key{
-            match key {
-                VirtualKeyCode::M => self.back_to_menu(),
-                VirtualKeyCode::Q => ctx.quitting = true,
-                VirtualKeyCode::L => {
-                    self.world_lands.push(Grassland::new(10,5));
-                }
-                _ => {}
-            }
-        }
 
     //左上角：
         //显示时间
@@ -164,18 +180,7 @@ impl State {
             }
         }
     }
-    //新建土地
-    fn new_land(&mut self, ctx: &mut BTerm) -> u32{
-            //开线程
-            let (tx, rx) = mpsc::channel();
-            thread::spawn(move || {
-                let val:u32 = 5;
-                tx.send(val).unwrap();
-            });
-            let received = rx.recv().unwrap();
-            received
-        }
-    
+
 }
 impl GameState for State{
     //tick每一帧(rendered frame)都调用，实时监听所有状态变化
