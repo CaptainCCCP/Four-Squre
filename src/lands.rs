@@ -4,11 +4,12 @@ use std::sync::mpsc::{self, Sender, Receiver};
 use std::thread::sleep;
 
 use crate::buildings::{self,Building, BuildingType};
-#[derive(Debug)]
+#[derive(Debug,PartialEq,Clone)]
 pub enum LandType {
     Grassland,
     Farmland,
     Pasture,
+    River,
 }
 
 pub struct Land{
@@ -67,6 +68,7 @@ impl Land{
     pub fn show_size(&self) -> u32{
         self.size
     }
+    pub fn get_type(&self) -> &LandType { &self.land_type }
     //新建土地
     pub fn new_land(&self) -> u32{
             // //开线程
@@ -80,6 +82,16 @@ impl Land{
             //thread::sleep(Duration::from_millis(100));
             self.fertility
         }
+}
+impl Clone for Land{
+    fn clone(&self) -> Self {
+        Land {
+            size:self.size,
+            land_type:LandType::Grassland,
+            fertility:self.fertility,
+            building_list:Vec::new(),
+        }
+    }
 }
 
 // pub struct Farmland{
