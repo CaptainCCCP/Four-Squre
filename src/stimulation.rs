@@ -1,6 +1,7 @@
 use bracket_lib::color::{BLACK, YELLOW,RED,WHITE,NAVY};
-use bracket_lib::prelude::{main_loop, BError, BTermBuilder, BTerm,VirtualKeyCode,
-                         GameState, to_cp437,RandomNumberGenerator,TextAlign,RGBA};
+use bracket_lib::prelude::{main_loop, BError, BTermBuilder,
+                           BTerm, VirtualKeyCode, GameState,
+                           to_cp437, RandomNumberGenerator, TextAlign, RGBA, Point};
 
 use std::collections::HashMap;
 
@@ -10,6 +11,8 @@ use std::sync::mpsc::{self, Sender, Receiver};
 
 use std::{vec, string};      
 
+use crate::map::Map;
+use crate::currentland::Currentland;
 use crate::lands::{self, LandType};
 use crate::buildings::{self,Building, BuildingType};
 use crate::people;
@@ -17,6 +20,8 @@ use crate::people;
 const GAME_WIDTH:i32 = 80;
 const GAME_HEIGHT:i32 = 50;
 const PERIOD:f32 = 1000.0;
+const START_X:i32 = 10;
+const START_Y:i32 = 3;
 
 enum GameMode{
     Menu,
@@ -31,6 +36,8 @@ pub struct State{
     frame_time:f32,
     time:i32,
 
+    map:Map,
+    currentland:Currentland,
     world_lands:Vec<lands::Land>,
     world_people:Vec<people::People>,
     world_market:HashMap<String, u32>,//数据结构存储所谓世界市场的货物数量
@@ -43,6 +50,8 @@ impl State {
             frame_time:0.0,
             time:0,
 
+            map:Map::new(),
+            currentland:Currentland::new(Point::new(START_X,START_Y)),
             world_lands:Vec::new(),
             world_people:Vec::new(),
             world_market:HashMap::new(),
@@ -68,6 +77,7 @@ impl State {
 //=================================================================================================
     //游戏主进程
     pub fn play(&mut self,ctx:&mut BTerm){
+        ctx.cls();
         //硬件操作中断
         if let Some(key) = ctx.key{
             match key {
@@ -103,14 +113,14 @@ impl State {
     //画面打印信息的定义
         let mut land_size_y:u32 = 13;
         let mut land_size_x:u32 = 51;
-        let mut land_name_y:u32 = 13;
-        let mut land_name_x:u32 = 51;
         let mut good_y:u32 = 13;
         let mut good_x:u32 = 15;
     //整体
         //背景颜色
         ctx.cls_bg(BLACK);
-
+        self.currentland.update(ctx,&self.map);
+        self.map.render(ctx);
+        self.currentland.render(ctx);
     //左上角：
         //显示时间
         self.frame_time += ctx.frame_time_ms;//计时
