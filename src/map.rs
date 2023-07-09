@@ -23,7 +23,7 @@ pub fn map_idx(x:i32, y:i32) -> usize{
 impl Map{
     pub fn new() -> Self{
         Self{
-            lands:vec![Land::new(10,Grassland,5,Vec::new());NUM_LANDS]
+            lands:vec![Land::new(10,Grassland,5,Vec::new(),Vec::new());NUM_LANDS]
         }
     }
     //
@@ -48,6 +48,9 @@ impl Map{
             }
         }
     }
+    //
+    pub fn get_lands(&mut self)-> &mut Vec<Land> { &mut self.lands }
+    //pub fn get_type(&self) -> &LandType { &self.land_type }
     //
     pub fn in_bounds(&self,point:Point) -> bool {
         point.x >= 0 && point.x < GAME_WIDTH

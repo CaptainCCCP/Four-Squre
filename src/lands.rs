@@ -4,6 +4,8 @@ use std::sync::mpsc::{self, Sender, Receiver};
 use std::thread::sleep;
 
 use crate::buildings::{self,Building, BuildingType};
+use crate::people::People;
+
 #[derive(Debug,PartialEq,Clone)]
 pub enum LandType {
     Grassland,
@@ -14,18 +16,21 @@ pub enum LandType {
 
 pub struct Land{
     //类型
-    land_type:LandType,
+    pub land_type:LandType,
     // 大小，building承载量
     size:u32,
     //肥沃度，物资产出量
     fertility: u32,
     //建筑列表
-    building_list:Vec<Building>,
+    pub building_list:Vec<Building>,
+    //人口列表
+    pub people_list:Vec<People>,
 }
 
 impl Land{
     //新建一个Grassland
-    pub fn new(size:u32,land_type:LandType,fertility:u32,building_list:Vec<Building>) -> Self{
+    pub fn new(size:u32,land_type:LandType,fertility:u32,
+               building_list:Vec<Building>,people_list:Vec<People>) -> Self{
         //参数不带self的是new，常用来作构造函数
         //新建一片土地
         Land{
@@ -33,6 +38,7 @@ impl Land{
             land_type:land_type,
             fertility:fertility,
             building_list:building_list,
+            people_list:people_list,
         }
     }
     //
@@ -69,6 +75,7 @@ impl Land{
         self.size
     }
     pub fn get_type(&self) -> &LandType { &self.land_type }
+    pub fn get_people(&self) -> &Vec<People> { &self.people_list }
     //新建土地
     pub fn new_land(&self) -> u32{
             // //开线程
@@ -90,6 +97,7 @@ impl Clone for Land{
             land_type:LandType::Grassland,
             fertility:self.fertility,
             building_list:Vec::new(),
+            people_list:Vec::new(),
         }
     }
 }

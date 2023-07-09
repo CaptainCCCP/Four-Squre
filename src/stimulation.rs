@@ -38,8 +38,6 @@ pub struct State{
 
     map:Map,
     currentland:Currentland,
-    world_lands:Vec<lands::Land>,
-    world_people:Vec<people::People>,
     world_market:HashMap<String, u32>,//数据结构存储所谓世界市场的货物数量
 }
 impl State {
@@ -52,8 +50,6 @@ impl State {
 
             map:Map::new(),
             currentland:Currentland::new(Point::new(START_X,START_Y)),
-            world_lands:Vec::new(),
-            world_people:Vec::new(),
             world_market:HashMap::new(),
         }
     }
@@ -67,9 +63,7 @@ impl State {
         self.mode = GameMode::Playing;
         self.frame_time = 0.0;
         self.time = 0;
-        //初始化土地
-        self.world_lands.clear();
-        self.world_lands.shrink_to_fit();
+
         //初始化货物
         self.world_market.insert(String::from("wheat"), 0);
         self.world_market.insert(String::from("apple"), 0);
@@ -84,16 +78,19 @@ impl State {
                 VirtualKeyCode::M => self.back_to_menu(),
                 VirtualKeyCode::Q => ctx.quitting = true,
                 VirtualKeyCode::L => {
-                    self.world_lands.push(lands::Land::new(10,LandType::Grassland,5,Vec::new()));
+                    self.map.get_lands().push(lands::Land::new(10,LandType::Grassland,5,
+                                                               Vec::new(),Vec::new()));
                 }
                 VirtualKeyCode::P => {
-                    self.world_people.push(people::People::new(5,people::PersonType::Farmer));
+                    let mut land = self.map.get_lands();
+                    //TODO:land[0]将来要替换成当前土地序号
+                    land[0].people_list.push(people::People::new(5,people::PersonType::Farmer));
                 }
                 _ => {}
             }
         }
     //接收货物信息
-    for land in &mut self.world_lands{
+    for land in self.map.get_lands(){
         let received_wheat:u32 = land.produce();
         let good_name:String = String::from("wheat");
         //更新货物信息
@@ -102,7 +99,7 @@ impl State {
         self.world_market.insert(String::from("wheat"), wheat);
     }
     //居民消费
-    for people in &mut self.world_people{
+    for people in &mut self.map.get_lands(){//这里还改好向人口ec中添加人口
         let consumed_wheat:u32 = people.consume();
         let good_name:String = String::from("wheat");
         //更新货物信息
