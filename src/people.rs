@@ -5,7 +5,7 @@ pub enum PersonType {
 
 pub struct People {
     wheat_consume:u32,
-    people_type:PersonType,
+    pub people_type:PersonType,
 }
 
 impl People {

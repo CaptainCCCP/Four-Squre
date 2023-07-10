@@ -59,7 +59,7 @@ impl Land{
         }
 
     }
-    //更新属性
+    //更新属性TODO:有问题
     fn update_size(&mut self){
         self.size = self.building_list.len() as u32;
      }
@@ -70,12 +70,19 @@ impl Land{
     pub fn produce(&self) -> u32{
         self.fertility
     }
+    //开垦
+    pub fn cultivate(&mut self,size:u32,land_type:LandType,fertility:u32) {
+        self.size = size;
+        self.land_type = land_type;
+        self.fertility = fertility;
+    }
     //展示size
     pub fn show_size(&self) -> u32{
         self.size
     }
     pub fn get_type(&self) -> &LandType { &self.land_type }
     pub fn get_people(&self) -> &Vec<People> { &self.people_list }
+    pub fn get_building(&self) -> &Vec<Building> { &self.building_list }
     //新建土地
     pub fn new_land(&self) -> u32{
             // //开线程

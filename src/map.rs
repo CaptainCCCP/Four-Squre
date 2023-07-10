@@ -22,8 +22,8 @@ pub fn map_idx(x:i32, y:i32) -> usize{
 
 impl Map{
     pub fn new() -> Self{
-        Self{
-            lands:vec![Land::new(10,Grassland,5,Vec::new(),Vec::new());NUM_LANDS]
+        Self{//size//LandType//fertility//building_list//people_list
+            lands:vec![Land::new(5,Grassland,0,Vec::new(),Vec::new());NUM_LANDS]
         }
     }
     //

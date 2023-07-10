@@ -11,11 +11,11 @@ use std::sync::mpsc::{self, Sender, Receiver};
 
 use std::{vec, string};      
 
-use crate::map::Map;
+use crate::map::{Map,map_idx};
 use crate::currentland::Currentland;
 use crate::lands::{self, LandType};
 use crate::buildings::{self,Building, BuildingType};
-use crate::people;
+use crate::people::{PersonType,People};
 
 const GAME_WIDTH:i32 = 80;
 const GAME_HEIGHT:i32 = 50;
@@ -26,7 +26,6 @@ const START_Y:i32 = 3;
 enum GameMode{
     Menu,
     Playing,
-    //Paused,
     End,
 }
 
@@ -57,6 +56,7 @@ impl State {
         self.mode = GameMode::Menu;
         self.frame_time = 0.0;
         self.time = 0;
+        self.map = Map::new();
     }
     //重启
     pub fn restart(&mut self){
@@ -77,14 +77,16 @@ impl State {
             match key {
                 VirtualKeyCode::M => self.back_to_menu(),
                 VirtualKeyCode::Q => ctx.quitting = true,
-                VirtualKeyCode::L => {
-                    self.map.get_lands().push(lands::Land::new(10,LandType::Grassland,5,
-                                                               Vec::new(),Vec::new()));
+                VirtualKeyCode::L => {//开垦土地
+                    self.map.get_lands()[map_idx(self.currentland.position.x-START_X,
+                        self.currentland.position.y-START_Y)].cultivate(3,LandType::Farmland,5);
                 }
-                VirtualKeyCode::P => {
-                    let mut land = self.map.get_lands();
+                VirtualKeyCode::P => {//添加人口
+                    let land = self.map.get_lands();
                     //TODO:land[0]将来要替换成当前土地序号
-                    land[0].people_list.push(people::People::new(5,people::PersonType::Farmer));
+                    land[map_idx(self.currentland.position.x-START_X,
+                        self.currentland.position.y-START_Y)]
+                        .people_list.push(People::new(5,PersonType::Farmer));
                 }
                 _ => {}
             }
@@ -99,19 +101,23 @@ impl State {
         self.world_market.insert(String::from("wheat"), wheat);
     }
     //居民消费
-    for people in &mut self.map.get_lands(){//这里还改好向人口ec中添加人口
-        let consumed_wheat:u32 = people.consume();
-        let good_name:String = String::from("wheat");
-        //更新货物信息
-        let mut wheat:u32 = self.world_market.get(&good_name).copied().unwrap_or(0);
-        wheat -= consumed_wheat;
-        self.world_market.insert(String::from("wheat"), wheat);
+    for land in self.map.get_lands().iter(){
+        for people in land.people_list.iter(){
+            let consumed_wheat:u32 = people.consume();
+            let good_name:String = String::from("wheat");
+            //更新货物信息
+            let mut wheat:u32 = self.world_market.get(&good_name).copied().unwrap_or(0);
+            wheat -= consumed_wheat;
+            self.world_market.insert(String::from("wheat"), wheat);
+        }
     }
     //画面打印信息的定义
         let mut land_size_y:u32 = 13;
         let mut land_size_x:u32 = 51;
         let mut good_y:u32 = 13;
         let mut good_x:u32 = 15;
+        let mut pop_x:u32 = 21;
+        let mut pop_y:u32 = 4;
     //整体
         //背景颜色
         ctx.cls_bg(BLACK);
@@ -135,6 +141,22 @@ impl State {
     //左下角：
     //右下角：
     //中间：
+        //中上人口列表
+        ctx.draw_hollow_box(20, 2, 35,5, WHITE, BLACK);//x,y,宽,高,fg字符颜色，bg背景颜色
+        ctx.print(21, 3, &format!("pop:"));
+        ctx.print(36, 3, &format!("area:"));
+        //打印人口和地区至终端
+        for people in &self.map.get_lands()[map_idx(self.currentland.position.x-START_X,
+            self.currentland.position.y-START_Y)].people_list{
+            let person_type = &people.people_type;
+            let person_type_str = match person_type {
+                PersonType::Farmer => "Farmer",
+                PersonType::Worker => "Worker",
+            };
+            ctx.print(pop_x,pop_y,&format!("{}",person_type_str));
+            pop_y += 1;
+
+        }
         //左侧货物列表
         ctx.draw_hollow_box(10, 10, 25,35, WHITE, BLACK);//x,y,宽,高,fg字符颜色，bg背景颜色
         ctx.print(11, 11, &format!("Worldmarket:"));
@@ -152,7 +174,7 @@ impl State {
         ctx.print(41, 12, &format!("name"));
         ctx.print(51, 12, &format!("size"));
         //打印土地至终端
-        for land in &self.world_lands {
+        for land in self.map.get_lands() {
             ctx.print(land_size_x, land_size_y,&format!("{}",land.show_size()));
             land_size_y += 1;
         }
