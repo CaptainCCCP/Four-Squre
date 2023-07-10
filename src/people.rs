@@ -1,23 +1,26 @@
 pub enum PersonType {
     Farmer,
     Worker,
+    Trader,
 }
 
 pub struct People {
-    wheat_consume:u32,
+    food_consume:u32,
+    storage:u32,
     pub people_type:PersonType,
 }
 
 impl People {
-    pub fn new(wheat_consume: u32,people_type:PersonType) -> Self {
+    pub fn new(food_consume: u32,storage:u32,people_type:PersonType) -> Self {
         People {
-            wheat_consume:wheat_consume,
+            food_consume:food_consume,
+            storage:storage,
             people_type:people_type,
         }
     }
 
     pub fn consume(&self) -> u32 {
-        self.wheat_consume
+        self.food_consume
     }
 
 
@@ -25,6 +28,7 @@ impl People {
         match &self.people_type {
             PersonType::Farmer => &self.people_type,
             PersonType::Worker => &self.people_type,
+            PersonType::Trader => &self.people_type,
         }
     }
 }

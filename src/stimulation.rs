@@ -15,6 +15,8 @@ use crate::map::{Map,map_idx};
 use crate::currentland::Currentland;
 use crate::lands::{self, LandType};
 use crate::buildings::{self,Building, BuildingType};
+use crate::buildings::BuildingType::BreadFactory;
+use crate::buildings::GoodType::{Bread, Wheat};
 use crate::people::{PersonType,People};
 
 const GAME_WIDTH:i32 = 80;
@@ -83,10 +85,15 @@ impl State {
                 }
                 VirtualKeyCode::P => {//添加人口
                     let land = self.map.get_lands();
-                    //TODO:land[0]将来要替换成当前土地序号
                     land[map_idx(self.currentland.position.x-START_X,
                         self.currentland.position.y-START_Y)]
-                        .people_list.push(People::new(5,PersonType::Farmer));
+                        .people_list.push(People::new(1,500,PersonType::Farmer));
+                }
+                VirtualKeyCode::B => {//添加建筑
+                    let land = self.map.get_lands();
+                    land[map_idx(self.currentland.position.x-START_X,
+                        self.currentland.position.y-START_Y)]
+                        .building_list.push(Building::new(3,Wheat,1,Bread,BreadFactory));
                 }
                 _ => {}
             }
@@ -113,11 +120,11 @@ impl State {
     }
     //画面打印信息的定义
         let mut land_size_y:u32 = 13;
-        let mut land_size_x:u32 = 51;
+        let mut land_size_x:u32 = 35;
         let mut good_y:u32 = 13;
-        let mut good_x:u32 = 15;
-        let mut pop_x:u32 = 21;
-        let mut pop_y:u32 = 4;
+        let mut good_x:u32 = 2;
+        let mut pop_x:u32 = 45;
+        let mut pop_y:u32 = 12;
     //整体
         //背景颜色
         ctx.cls_bg(BLACK);
@@ -142,9 +149,9 @@ impl State {
     //右下角：
     //中间：
         //中上人口列表
-        ctx.draw_hollow_box(20, 2, 35,5, WHITE, BLACK);//x,y,宽,高,fg字符颜色，bg背景颜色
-        ctx.print(21, 3, &format!("pop:"));
-        ctx.print(36, 3, &format!("area:"));
+        ctx.draw_hollow_box(44, 10, 20,35, WHITE, BLACK);//x,y,宽,高,fg字符颜色，bg背景颜色
+        ctx.print(45, 11, &format!("pop:"));
+        ctx.print(55, 11, &format!("area:"));
         //打印人口和地区至终端
         for people in &self.map.get_lands()[map_idx(self.currentland.position.x-START_X,
             self.currentland.position.y-START_Y)].people_list{
@@ -152,27 +159,28 @@ impl State {
             let person_type_str = match person_type {
                 PersonType::Farmer => "Farmer",
                 PersonType::Worker => "Worker",
+                PersonType::Trader => "Trader",
             };
             ctx.print(pop_x,pop_y,&format!("{}",person_type_str));
             pop_y += 1;
 
         }
         //左侧货物列表
-        ctx.draw_hollow_box(10, 10, 25,35, WHITE, BLACK);//x,y,宽,高,fg字符颜色，bg背景颜色
-        ctx.print(11, 11, &format!("Worldmarket:"));
-        ctx.print(15, 12, &format!("name"));
-        ctx.print(25, 12, &format!("number"));
+        ctx.draw_hollow_box(1, 10, 20,35, WHITE, BLACK);//x,y,宽,高,fg字符颜色，bg背景颜色
+        ctx.print(2, 11, &format!("World market:"));
+        ctx.print(2, 12, &format!("name"));
+        ctx.print(10, 12, &format!("number"));
         //打印货物数量至终端
         for (key, value) in &self.world_market {
-            ctx.print(good_x, good_y,&format!("{key}: {value}"));
+            ctx.print(good_x, good_y,&format!("{key}:   {value}"));
             good_y += 1;
 
         }
         //右侧土地列表
-        ctx.draw_hollow_box(40, 10, 25,35, WHITE, BLACK);//x,y,宽,高,fg字符颜色，bg背景颜色
-        ctx.print(41, 11, &format!("Worldlands:"));
-        ctx.print(41, 12, &format!("name"));
-        ctx.print(51, 12, &format!("size"));
+        ctx.draw_hollow_box(22, 10, 20,35, WHITE, BLACK);//x,y,宽,高,fg字符颜色，bg背景颜色
+        ctx.print(23, 11, &format!("Worldlands:"));
+        ctx.print(23, 12, &format!("name"));
+        ctx.print(33, 12, &format!("size"));
         //打印土地至终端
         for land in self.map.get_lands() {
             ctx.print(land_size_x, land_size_y,&format!("{}",land.show_size()));

@@ -4,6 +4,7 @@ use std::sync::mpsc::{self, Sender, Receiver};
 use std::thread::sleep;
 
 use crate::buildings::{self,Building, BuildingType};
+use crate::buildings::GoodType::{Wheat,Bread};
 use crate::people::People;
 
 #[derive(Debug,PartialEq,Clone)]
@@ -25,6 +26,7 @@ pub struct Land{
     pub building_list:Vec<Building>,
     //人口列表
     pub people_list:Vec<People>,
+    //待添加 价格表 自然情况表
 }
 
 impl Land{
@@ -43,7 +45,7 @@ impl Land{
     }
     //
     pub fn add_building(&mut self,value:u32){
-        let mut newbuilding = Building::new(100, BuildingType::Factory);
+        let mut newbuilding = Building::new(3, Wheat,1,Bread,BuildingType::BreadFactory);
         self.building_list.push(newbuilding);
         self.update_size();
     }
