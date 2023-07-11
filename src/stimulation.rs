@@ -128,7 +128,10 @@ impl State {
             let wheats = Arc::clone(&wheat);
             let consume = thread::spawn(move || {
             let mut num = wheats.lock().unwrap();
-            *num -= consumed_wheat;
+                if *num > 500{
+                    *num -= 500;
+                }else{*num -= consumed_wheat;}
+
             });
             consume.join().unwrap();
             //
