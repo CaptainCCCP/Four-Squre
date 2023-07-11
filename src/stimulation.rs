@@ -26,7 +26,6 @@ const GAME_HEIGHT:i32 = 50;
 const PERIOD:f32 = 1000.0;
 const START_X:i32 = 10;
 const START_Y:i32 = 3;
-
 enum GameMode{
     Menu,
     Playing,
@@ -70,11 +69,13 @@ impl State {
 
         //初始化货物
         self.world_market.insert(String::from("wheat"), 0);
-        self.world_market.insert(String::from("apple"), 0);
+        self.world_market.insert(String::from("bread"), 0);
     }
 //=================================================================================================
     //游戏主进程
     pub fn play(&mut self,ctx:&mut BTerm){
+    #[cfg(test)]
+    #[test]
         ctx.cls();
         //硬件操作中断
         if let Some(key) = ctx.key{
@@ -96,6 +97,8 @@ impl State {
                     land[map_idx(self.currentland.position.x-START_X,
                         self.currentland.position.y-START_Y)]
                         .building_list.push(Building::new(3,Wheat,1,Bread,BreadFactory));
+                    assert_eq!(land[map_idx(self.currentland.position.x-START_X, self.currentland.position.y-START_Y)]
+                        .building_list.len(), 1);
                 }
                 _ => {}
             }
@@ -125,15 +128,22 @@ impl State {
             let good_name:String = String::from("wheat");
             //try
             let mut wheat:Arc<Mutex<u32>> = Arc::new(Mutex::new(self.world_market.get(&good_name).copied().unwrap_or(0)));
-            let wheats = Arc::clone(&wheat);
-            let consume = thread::spawn(move || {
-            let mut num = wheats.lock().unwrap();
-                if *num > 500{
-                    *num -= 500;
-                }else{*num -= consumed_wheat;}
-
-            });
-            consume.join().unwrap();
+            let mut consumes = vec![];
+            for _ in 0..10 {
+                let wheats = Arc::clone(&wheat);
+                let consume = thread::spawn(move || {
+                    let mut num = wheats.lock().unwrap();
+                    // if *num > 500 {
+                    //     *num -= 500;
+                    // } else {
+                        *num -= consumed_wheat;
+                    //}
+                });
+                consumes.push(consume);
+            }
+            for consume in consumes {
+                consume.join().unwrap();
+            }
             //
             //更新货物信息
             //let mut wheat:u32 = self.world_market.get(&good_name).copied().unwrap_or(0);
