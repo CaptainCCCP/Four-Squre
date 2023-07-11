@@ -7,6 +7,8 @@ use std::collections::HashMap;
 
 use std::thread;
 use std::time::Duration;
+use std::sync::{Mutex,Arc};
+use::std::rc::Rc;
 use std::sync::mpsc::{self, Sender, Receiver};
 
 use std::{vec, string};      
@@ -102,20 +104,38 @@ impl State {
     for land in self.map.get_lands(){
         let received_wheat:u32 = land.produce();
         let good_name:String = String::from("wheat");
+        //mutex try
+        let mut wheat:Arc<Mutex<u32>> = Arc::new(Mutex::new(self.world_market.get(&good_name).copied().unwrap_or(0)));
+        let wheats = Arc::clone(&wheat);
+        let produce = thread::spawn(move || {
+            let mut num = wheats.lock().unwrap();
+            *num += received_wheat;
+        });
+        //mutex try
         //更新货物信息
-        let mut wheat:u32 = self.world_market.get(&good_name).copied().unwrap_or(0);
-        wheat += received_wheat;
-        self.world_market.insert(String::from("wheat"), wheat);
+        //let mut wheat:u32 = self.world_market.get(&good_name).copied().unwrap_or(0);
+        //wheat += received_wheat;
+        produce.join().unwrap();
+        self.world_market.insert(String::from("wheat"), *wheat.lock().unwrap());
     }
     //居民消费
     for land in self.map.get_lands().iter(){
         for people in land.people_list.iter(){
             let consumed_wheat:u32 = people.consume();
             let good_name:String = String::from("wheat");
+            //try
+            let mut wheat:Arc<Mutex<u32>> = Arc::new(Mutex::new(self.world_market.get(&good_name).copied().unwrap_or(0)));
+            let wheats = Arc::clone(&wheat);
+            let consume = thread::spawn(move || {
+            let mut num = wheats.lock().unwrap();
+            *num -= consumed_wheat;
+            });
+            consume.join().unwrap();
+            //
             //更新货物信息
-            let mut wheat:u32 = self.world_market.get(&good_name).copied().unwrap_or(0);
-            wheat -= consumed_wheat;
-            self.world_market.insert(String::from("wheat"), wheat);
+            //let mut wheat:u32 = self.world_market.get(&good_name).copied().unwrap_or(0);
+            //wheat -= consumed_wheat;
+            self.world_market.insert(String::from("wheat"), *wheat.lock().unwrap());
         }
     }
     //画面打印信息的定义
