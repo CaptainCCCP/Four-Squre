@@ -3,7 +3,7 @@
 use bracket_lib::prelude::{main_loop, BError, BTermBuilder};//游戏引擎
 //use std::{cmp::Ordering, io};
 //use std::time::{Duration, Instant};
-//use rand::Rng;
+//use rand::Rng;l
 
 pub mod buildings;
 pub mod lands;
